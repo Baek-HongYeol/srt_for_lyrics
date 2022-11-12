@@ -1,2 +1,3 @@
-# srt_for_lyrics
-make srt file associated with music.
+# Srt_for_Lyrics
+make .srt file associated with music.
+

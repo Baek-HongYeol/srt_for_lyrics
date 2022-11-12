@@ -7,7 +7,7 @@ class Sync_Lyrics:
         if audio_filename is None:
             raise ValueError("audio_file is required for sync_lyrics")
 
-        self.audio_filename = audio_filename or "C:/Users/BoBHongY/Downloads/POPSTAR X THE BADDEST.mp3"
+        self.audio_filename = audio_filename
         if not os.path.exists(self.audio_filename):
             raise FileNotFoundError("audio_file is not Exists!")
         if script is None:
@@ -135,7 +135,7 @@ class Sync_Lyrics:
         with open(filename, "w", encoding='UTF-8') as f:
             for i, row in enumerate(self.sync_list):
                 f.write(i+"\n")
-                f.write(self.get_row_with_format(row))
+                f.write(self.get_row_with_format(row)+"\n")
 
 
     def sync_lyrics(self):
