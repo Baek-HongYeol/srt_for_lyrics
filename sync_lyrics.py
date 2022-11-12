@@ -134,7 +134,7 @@ class Sync_Lyrics:
             raise FileExistsError("Target .srt file already exists!")
         with open(filename, "w", encoding='UTF-8') as f:
             for i, row in enumerate(self.sync_list):
-                f.write(i+"\n")
+                f.write(f"{i+1}\n")
                 f.write(self.get_row_with_format(row)+"\n")
 
 
