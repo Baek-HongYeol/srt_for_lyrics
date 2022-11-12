@@ -54,6 +54,8 @@ def get_pos():
 
 def unpause():
     global p
+    if p.getpos() == -1:
+        print("not started yet")
     p.unpause()
 
 def reset():
@@ -82,7 +84,7 @@ def sync_lyrics():
     except Exception as e:
         print("file is not readable.", file = sys.stderr)
         raise e
-    a = Sync_Lyrics('' , lyrics)
+    a = Sync_Lyrics(audio_filename, lyrics)
     a.sync_lyrics()
     title = True
     

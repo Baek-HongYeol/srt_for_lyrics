@@ -174,7 +174,7 @@ class Sync_Lyrics:
                 self.sync_list.append(tmp)
                 print('')
                 self.print_row(tmp)
-                if self.idx > len(lyrics):
+                if self.idx == len(lyrics):
                     print("\n모든 가사의 싱크를 등록하셨습니다. 이제 파일을 확인중입니다.")
                     try:
                         self.save()
@@ -182,8 +182,10 @@ class Sync_Lyrics:
                         print(e)
                     ex = input("종료하시겠습니까? (Yes or not)")
                     if ex.lower() == 'y' or ex.lower() == 'yes':
+                        self.reset()
                         return
-                self.print_row((self.start_pos, '', lyrics[self.idx]))
+                else:
+                    self.print_row((self.start_pos, '', lyrics[self.idx]))
             elif ch == 'save':
                 print("\n파일을 확인중입니다.")
                 try:
@@ -192,4 +194,5 @@ class Sync_Lyrics:
                     print(e)
                 ex = input("종료하시겠습니까? (Yes or not)")
                 if ex.lower() == 'y' or ex.lower() == 'yes':
+                    self.reset()
                     return
