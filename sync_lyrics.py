@@ -29,11 +29,11 @@ class Sync_Lyrics:
             path = path[:ext_idx]
         name_idx = path.rfind('/')
         if name_idx != -1:
-            path = path[name_idx:]
+            path = path[name_idx+1:]
         else:
             name_idx = path.rfind('\\')
             if name_idx != -1:
-                path = path[name_idx:]
+                path = path[name_idx+1:]
         return path+".srt"
 
     def start(self):
