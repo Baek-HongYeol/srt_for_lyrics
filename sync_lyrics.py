@@ -84,6 +84,7 @@ class Sync_Lyrics:
             return
         output = self.timestamp_to_string(row[0]) + ' --> ' + self.timestamp_to_string(row[1]) + "\n"
         output += row[2] + "\n"
+        return output
 
     def print_row(self, row:Tuple[int,any,str]):
         if len(row) != 3:
@@ -101,7 +102,7 @@ class Sync_Lyrics:
 
     def cancel(self):
         self.reset()
-        print("Cancel making srt file")
+        print("Cancel making sync lyrics")
         return
 
     def back_line(self):
@@ -134,7 +135,7 @@ class Sync_Lyrics:
         with open(filename, "w", encoding='UTF-8') as f:
             for i, row in enumerate(self.sync_list):
                 f.write(i+"\n")
-                f.write()
+                f.write(self.get_row_with_format(row))
 
 
     def sync_lyrics(self):
@@ -173,12 +174,22 @@ class Sync_Lyrics:
                 self.sync_list.append(tmp)
                 print('')
                 self.print_row(tmp)
+                if self.idx > len(lyrics):
+                    print("\n모든 가사의 싱크를 등록하셨습니다. 이제 파일을 확인중입니다.")
+                    try:
+                        self.save()
+                    except Exception as e:
+                        print(e)
+                    ex = input("종료하시겠습니까? (Yes or not)")
+                    if ex.lower() == 'y' or ex.lower() == 'yes':
+                        return
                 self.print_row((self.start_pos, '', lyrics[self.idx]))
             elif ch == 'save':
+                print("\n파일을 확인중입니다.")
                 try:
                     self.save()
                 except Exception as e:
                     print(e)
                 ex = input("종료하시겠습니까? (Yes or not)")
                 if ex.lower() == 'y' or ex.lower() == 'yes':
-                    exit()
+                    return
