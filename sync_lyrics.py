@@ -46,8 +46,11 @@ class Sync_Lyrics:
         self.is_pause = True
 
     def unpause(self):
-        self.p.unpause()
-        self.is_pause = False
+        if self.p.get_pos() == -1:
+            print("not started yet")
+        else:
+            self.p.unpause()
+            self.is_pause = False
     
     def set_pos(self, pos:float):
         try:

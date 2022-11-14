@@ -54,9 +54,10 @@ def get_pos():
 
 def unpause():
     global p
-    if p.getpos() == -1:
+    if p.get_pos() == -1:
         print("not started yet")
-    p.unpause()
+    else:
+        p.unpause()
 
 def reset():
     global p, offset
