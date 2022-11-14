@@ -1,5 +1,6 @@
 import pygame
 import os
+import tempfile
 from typing import List, Tuple
 
 class Sync_Lyrics:
@@ -16,14 +17,17 @@ class Sync_Lyrics:
         self.script = script
         self.is_pause = True
         self.sync_started = False
+        self.filename = self.get_srt_filename()
+        self.tmpfile = None
         pygame.mixer.init()
         pygame.mixer.music.load( self.audio_filename )
         self.p = pygame.mixer.music
         self.offset = -1
         print("This page is for making srt file sync with audio file!")
     
-    def get_srt_filename(self):
-        path = self.audio_filename
+    def get_srt_filename(self, path = ''):
+        if path == '':
+            path = self.audio_filename
         ext_idx = path.rfind('.')
         if ext_idx != -1:
             path = path[:ext_idx]
@@ -34,7 +38,27 @@ class Sync_Lyrics:
             name_idx = path.rfind('\\')
             if name_idx != -1:
                 path = path[name_idx+1:]
+        
+        if path == '':
+            return self.get_srt_filename()
         return path+".srt"
+
+    def clear_tmpfile(self):
+        if self.tmpfile != None:
+            self.tmpfile.close()
+            if not self.tmpfile.closed:
+                print("tmp not closed!!")
+            
+            os.unlink(self.tmppath)
+            if os.path.exists(self.tmppath):
+                    print("tmpfile was not removed!")
+            self.tmpfile = None
+        
+    def make_tmpfile(self):
+        self.clear_tmpfile()
+        fd, self.tmppath = tempfile.mkstemp(suffix="_"+self.filename, dir='.')
+        self.tmpfile = os.fdopen(fd, "w")
+
 
     def start(self):
         self.p.play()
@@ -132,13 +156,29 @@ class Sync_Lyrics:
         self.sync_started = True
     
     def save(self):
-        filename = self.get_srt_filename()
-        if os.path.exists(filename):
-            raise FileExistsError("Target .srt file already exists!")
+        print("\n파일을 확인중입니다.")
+        print("Default filename depends on audio file name.")
+        if self.tmpfile is None:
+            self.make_tmpfile()
+        for i, row in enumerate(self.sync_list):
+                self.tmpfile.write(f"{i+1}\n")
+                self.tmpfile.write(self.get_row_with_format(row)+"\n")
+
+        filename = self.filename
+        while os.path.exists(filename):
+            overwrite = input(filename + " already exists. Overwrite?(y/N) ")
+            if overwrite.lower() == 'y' or overwrite.lower() == 'yes':
+                break
+            path = input("Enter the srt filename except extension(.srt): ")
+            filename = self.get_srt_filename(path)
+        
         with open(filename, "w", encoding='UTF-8') as f:
             for i, row in enumerate(self.sync_list):
                 f.write(f"{i+1}\n")
                 f.write(self.get_row_with_format(row)+"\n")
+
+        print(filename + " is saved!\n")
+        self.clear_tmpfile()
 
 
     def sync_lyrics(self):
@@ -178,7 +218,7 @@ class Sync_Lyrics:
                 print('')
                 self.print_row(tmp)
                 if self.idx == len(lyrics):
-                    print("\n모든 가사의 싱크를 등록하셨습니다. 이제 파일을 확인중입니다.")
+                    print("\n모든 가사의 싱크를 등록하셨습니다. ", end='')
                     try:
                         self.save()
                     except Exception as e:
@@ -190,7 +230,6 @@ class Sync_Lyrics:
                 else:
                     self.print_row((self.start_pos, '', lyrics[self.idx]))
             elif ch == 'save':
-                print("\n파일을 확인중입니다.")
                 try:
                     self.save()
                 except Exception as e:
