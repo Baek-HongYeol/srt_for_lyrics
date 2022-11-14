@@ -39,6 +39,7 @@ def set_pos(pos):
     except Exception as e:
         print("Wrong position!:", pos)
         print(e)
+        return
     p.play()
     p.set_pos(pos)
     offset = pos

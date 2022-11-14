@@ -82,6 +82,7 @@ class Sync_Lyrics:
         except Exception as e:
             print("Wrong position!:", pos)
             print(e)
+            return
         self.p.play()
         self.p.set_pos(pos)
         self.offset = pos
