@@ -66,10 +66,15 @@ def reset():
     offset = -1
 
 def change():
-    global audio_filename
+    global p, audio_filename
     audio_filename = input("\n오디오 파일 이름 혹은 경로를 입력하세요. :\n")
     while not os.path.exists(audio_filename):
         audio_filename = input("존재하지 않는 파일 혹은 경로입니다. 다시 입력하세요.\n")
+    p.stop()
+    pygame.mixer.music.unload()
+    pygame.mixer.music.load( audio_filename )
+    p = pygame.mixer.music
+    
 
 
 def sync_lyrics():
