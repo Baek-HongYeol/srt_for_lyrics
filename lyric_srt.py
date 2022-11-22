@@ -1,6 +1,6 @@
 import os
 import sys
-import pygame
+from pygame import mixer
 from sync_lyrics import Sync_Lyrics
 
 def load_dev(i):
@@ -11,14 +11,37 @@ def load_dev(i):
             txt = f.read().splitlines()
         return txt[i]
 
-audio_filename = load_dev(0) or input("오디오 파일 이름 혹은 경로를 입력하세요. :\n")
-while not os.path.exists(audio_filename):
-    audio_filename = input("존재하지 않는 파일 혹은 경로입니다. 다시 입력하세요.\n")
+def init_audio():
+    global p, audio_filename, sample_rate
+    audio_filename = load_dev(0) or input("오디오 파일 이름 혹은 경로를 입력하세요. :\n")
+    while not os.path.exists(audio_filename):
+        audio_filename = input("존재하지 않는 파일 혹은 경로입니다. \n오디오 파일 이름 혹은 경로를 입력하세요. :\n")
+    
+    while True:
+        try:
+            sample_rate = load_dev(1) or int(input("오디오 sample rate를 입력하세요.(44100, 48000): "))
+            sample_rate = int(sample_rate)
+            break
+        except Exception as e:
+            print(e)
 
-pygame.mixer.init()
-pygame.mixer.music.load( audio_filename )
-p = pygame.mixer.music
+    if sample_rate:
+        mixer.init(frequency=sample_rate)
+    else:
+        sample_rate = 44100
+        mixer.init()
+    mixer.music.load( audio_filename )
+    p = mixer.music
+
+# TODO get audio property from audio file. ex) 44.1kHz/48kHz
+########### init ###########
+
 offset = -1
+sample_rate = -1
+init_audio()
+
+############################
+
 
 def start():
     global p
@@ -67,21 +90,16 @@ def reset():
 
 def change():
     global p, audio_filename
-    audio_filename = input("\n오디오 파일 이름 혹은 경로를 입력하세요. :\n")
-    while not os.path.exists(audio_filename):
-        audio_filename = input("존재하지 않는 파일 혹은 경로입니다. 다시 입력하세요.\n")
     p.stop()
-    pygame.mixer.music.unload()
-    pygame.mixer.music.load( audio_filename )
-    p = pygame.mixer.music
+    mixer.music.unload()
+    init_audio()
     
 
-
 def sync_lyrics():
-    global p, audio_filename, title
+    global p, audio_filename, title, sample_rate
     p.unload()
 
-    lyric_filename = load_dev(1) or input("등록할 스크립트 파일이름 혹은 경로를 입력하세요. :\n")
+    lyric_filename = load_dev(2) or input("등록할 스크립트 파일이름 혹은 경로를 입력하세요. :\n")
     while not os.path.exists(lyric_filename):
         lyric_filename = input("존재하지 않는 파일 혹은 경로입니다. 다시 입력하세요.\n")
     lyrics = []
@@ -91,12 +109,15 @@ def sync_lyrics():
     except Exception as e:
         print("file is not readable.", file = sys.stderr)
         raise e
-    a = Sync_Lyrics(audio_filename, lyrics)
+    audio_options = {'frequency': sample_rate}
+    a = Sync_Lyrics(audio_filename, audio_options, lyrics)
     a.sync_lyrics()
     title = True
-    
+
+
+########### Start ###########
 title = True
-cmds = {'s': start, 'p': pause, 'up':unpause, 'r':reset, 'g':get_pos, 'sync':sync_lyrics, 'change': change,  'q': quit}
+cmds = {'s': start, 'p': pause, 'up':unpause, 'r':reset, 'g':get_pos, 'sync':sync_lyrics, 'change': change, 'q': quit}
 while True:
     if title:
         print("\nThis page is for Audio Player! \nThe commands are below:")

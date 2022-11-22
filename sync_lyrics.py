@@ -1,10 +1,11 @@
 import pygame
 import os
+from pygame import mixer
 import tempfile
 from typing import List, Tuple
 
 class Sync_Lyrics:
-    def __init__(self, audio_filename:str = None, script:List[str] = None) -> None:
+    def __init__(self, audio_filename:str = None, audio_options:dict = None, script:List[str] = None, sync_options:dict=None) -> None:
         if audio_filename is None:
             raise ValueError("audio_file is required for sync_lyrics")
 
@@ -19,11 +20,21 @@ class Sync_Lyrics:
         self.sync_started = False
         self.filename = self.get_srt_filename()
         self.tmpfile = None
-        pygame.mixer.init()
-        pygame.mixer.music.load( self.audio_filename )
-        self.p = pygame.mixer.music
+        if audio_options and "frequency" in audio_options:
+            try:
+                frequency = int(audio_options['frequency'])
+                mixer.init(frequency)
+            except:
+                mixer.init()
+        else:
+            mixer.init()
+        mixer.music.load( self.audio_filename )
+        self.p = mixer.music
         self.offset = -1
         print("This page is for making srt file sync with audio file!")
+        # TODO 2줄 가사도 지원하기 (일본어 노래 등)
+            # TODO-1 터미널 창에 맞춰서 output 조정하기
+            # TODO-2 1줄/2줄 선택받고 출력, 저장 데이터(튜플) 조정하기
     
     def get_srt_filename(self, path = ''):
         if path == '':
@@ -91,7 +102,6 @@ class Sync_Lyrics:
         t = self.p.get_pos()
         if self.offset != -1:
             t += int(self.offset*1000)
-        print(t)
         return t
 
 
@@ -232,6 +242,7 @@ class Sync_Lyrics:
                     self.print_row((self.start_pos, '', lyrics[self.idx]))
             elif ch == 'save':
                 try:
+                    self.pause()
                     self.save()
                 except Exception as e:
                     print(e)
