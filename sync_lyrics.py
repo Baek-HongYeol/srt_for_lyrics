@@ -1,4 +1,3 @@
-import pygame
 import os
 from pygame import mixer
 import tempfile
@@ -68,7 +67,7 @@ class Sync_Lyrics:
     def make_tmpfile(self):
         self.clear_tmpfile()
         fd, self.tmppath = tempfile.mkstemp(suffix="_"+self.filename, dir='.')
-        self.tmpfile = os.fdopen(fd, "w")
+        self.tmpfile = os.fdopen(fd, "w", encoding="utf-8")
 
 
     def start(self):
@@ -207,14 +206,10 @@ class Sync_Lyrics:
                 if ch == 'm':
                     print('\n' + lyrics[self.idx])
                     self.start()
-                elif ch == 's':
-                    self.sync_start()
-                    self.print_row((self.start_pos, '', lyrics[self.idx]))
                 else:
                     cmds[ch]()
                     if ch == 'c':
                         return
-                # TODO save, quit, unpause features.
 
             elif ch == '' and not self.is_pause:
                 if not self.sync_started:
@@ -246,6 +241,7 @@ class Sync_Lyrics:
                     self.save()
                 except Exception as e:
                     print(e)
+                    print("위 오류로 인해 저장에 실패했습니다.")
                 ex = input("종료하시겠습니까? (Yes or not)")
                 if ex.lower() == 'y' or ex.lower() == 'yes':
                     self.reset()
