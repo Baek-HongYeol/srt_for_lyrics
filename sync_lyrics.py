@@ -1,24 +1,28 @@
 import os
+import sys
 from pygame import mixer
 import tempfile
 from typing import List, Tuple
+from config import MyConfig
 
 class Sync_Lyrics:
-    def __init__(self, audio_filename:str = None, audio_options:dict = None, script:List[str] = None, sync_options:dict=None) -> None:
-        if audio_filename is None:
+    def __init__(self, config:MyConfig = None) -> None:
+        self.config = config
+        if config.audio_filename is None:
             raise ValueError("audio_file is required for sync_lyrics")
 
-        self.audio_filename = audio_filename
-        if not os.path.exists(self.audio_filename):
+        if not os.path.exists(config.audio_filename):
             raise FileNotFoundError("audio_file is not Exists!")
-        if script is None:
-            raise ValueError("script is required for sync_lyrics")
         
-        self.script = script
+        self.audio_filename = config.audio_filename
+        self.config.set_lyric_file()
+        self.filename = self.get_srt_filename()
+        self.script = None
         self.is_pause = True
         self.sync_started = False
-        self.filename = self.get_srt_filename()
         self.tmpfile = None
+        
+        audio_options = {'frequency': config.sample_rate}
         if audio_options and "frequency" in audio_options:
             try:
                 frequency = int(audio_options['frequency'])
@@ -30,11 +34,30 @@ class Sync_Lyrics:
         mixer.music.load( self.audio_filename )
         self.p = mixer.music
         self.offset = -1
-        print("This page is for making srt file sync with audio file!")
+        self.read_script()
+
+        print("This page is for making srt file with audio file!")
+        print("The commands are below:")
         # TODO 2줄 가사도 지원하기 (일본어 노래 등)
             # TODO-1 터미널 창에 맞춰서 output 조정하기
             # TODO-2 1줄/2줄 선택받고 출력, 저장 데이터(튜플) 조정하기
     
+    def read_script(self, lyric_filename:str = None):
+        if lyric_filename is None:
+            lyric_filename = self.config.lyric_filename
+        
+        lyrics = []
+        if not os.path.exists(lyric_filename):
+            self.config.set_lyric_file()
+            #TODO 가사 파일 변경 기능 + 변경 취소 시 예외 처리
+        try:
+            with open(lyric_filename, "r", encoding='UTF-8') as f:
+                lyrics = f.read().splitlines()
+        except Exception as e:
+            print("file is not readable.", file = sys.stderr)
+            raise e
+        self.script = lyrics
+
     def get_srt_filename(self, path = ''):
         if path == '':
             path = self.audio_filename
@@ -115,7 +138,7 @@ class Sync_Lyrics:
         min = min % 60
         return '%02d:%02d:%02d,%03d'%(hour,min,sec,ms)
 
-    def get_row_with_format(self, row:Tuple[int,any,str]):
+    def row_with_string_format(self, row:Tuple[int,any,str]):
         if len(row) != 3:
             print('wrong row')
             return
@@ -127,7 +150,7 @@ class Sync_Lyrics:
         if len(row) != 3:
             print('wrong row')
             return
-        print(self.get_row_with_format(row), end='')
+        print(self.row_with_string_format(row), end='')
     
     def reset(self):
         self.p.stop()
@@ -172,7 +195,7 @@ class Sync_Lyrics:
             self.make_tmpfile()
         for i, row in enumerate(self.sync_list):
                 self.tmpfile.write(f"{i+1}\n")
-                self.tmpfile.write(self.get_row_with_format(row)+"\n")
+                self.tmpfile.write(self.row_with_string_format(row)+"\n")
 
         filename = self.filename
         while os.path.exists(filename):
@@ -185,9 +208,10 @@ class Sync_Lyrics:
         with open(filename, "w", encoding='UTF-8') as f:
             for i, row in enumerate(self.sync_list):
                 f.write(f"{i+1}\n")
-                f.write(self.get_row_with_format(row)+"\n")
+                f.write(self.row_with_string_format(row)+"\n")
 
         print(filename + " is saved!\n")
+        self.filename = filename
         self.clear_tmpfile()
 
 
@@ -200,7 +224,7 @@ class Sync_Lyrics:
         
         cmds = {'m': self.start, 'p': self.pause, 'up': self.unpause, 'r': self.reset, 'c': self.cancel, 'b': self.back_line}
         while True:
-            ch = input("m: music_start, p: pause, up: unpause, r: reset, b: 1 line back, c: cancel, save: save, \\n: sync line.\n")
+            ch = input("\t[ m: music_start, p: pause, up: unpause, r: reset, b: 1 line back, c: cancel, save: save, \\n: sync line. ]\n")
             
             if ch in cmds.keys():
                 if ch == 'm':

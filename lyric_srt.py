@@ -1,10 +1,9 @@
 import os
-import sys
 from pygame import mixer
 from sync_lyrics import Sync_Lyrics
+from config import MyConfig
 
 def load_dev(i):
-    global audio_filename
     txt = ''
     if os.path.exists("test.txt"):
         with open("test.txt", "r", encoding="UTF-8") as f:
@@ -12,33 +11,28 @@ def load_dev(i):
         return txt[i]
 
 def init_audio():
-    global p, audio_filename, sample_rate
-    audio_filename = load_dev(0) or input("오디오 파일 이름 혹은 경로를 입력하세요. :\n")
-    while not os.path.exists(audio_filename):
-        audio_filename = input("존재하지 않는 파일 혹은 경로입니다. \n오디오 파일 이름 혹은 경로를 입력하세요. :\n")
-    
-    while True:
-        try:
-            sample_rate = load_dev(1) or int(input("오디오 sample rate를 입력하세요.(44100, 48000): "))
-            sample_rate = int(sample_rate)
-            break
-        except Exception as e:
-            print(e)
-
-    if sample_rate:
+    global p, config
+    audio_filename = config.audio_filename
+    sample_rate = config.sample_rate
+    if isinstance(sample_rate, int) and sample_rate > 0:
+        print("sample_rate cannot be recognized. using 44.1khz.")
         mixer.init(frequency=sample_rate)
     else:
-        sample_rate = 44100
+        config.sample_rate = 44100
         mixer.init()
     mixer.music.load( audio_filename )
     p = mixer.music
+
+def init():
+    init_audio()
 
 # TODO get audio property from audio file. ex) 44.1kHz/48kHz
 ########### init ###########
 
 offset = -1
 sample_rate = -1
-init_audio()
+config = MyConfig()
+init()
 
 ############################
 
@@ -89,28 +83,19 @@ def reset():
     offset = -1
 
 def change():
-    global p, audio_filename
+    global p, config
     p.stop()
     mixer.music.unload()
+    config.find_audio_file(True)
     init_audio()
-    
+
 
 def sync_lyrics():
-    global p, audio_filename, title, sample_rate
+    global p, title, config
     p.unload()
 
-    lyric_filename = load_dev(2) or input("등록할 스크립트 파일이름 혹은 경로를 입력하세요. :\n")
-    while not os.path.exists(lyric_filename):
-        lyric_filename = input("존재하지 않는 파일 혹은 경로입니다. 다시 입력하세요.\n")
-    lyrics = []
-    try:
-        with open(lyric_filename, "r", encoding='UTF-8') as f:
-            lyrics = f.read().splitlines()
-    except Exception as e:
-        print("file is not readable.", file = sys.stderr)
-        raise e
-    audio_options = {'frequency': sample_rate}
-    a = Sync_Lyrics(audio_filename, audio_options, lyrics)
+    
+    a = Sync_Lyrics(config)
     a.sync_lyrics()
     title = True
 
@@ -122,9 +107,8 @@ while True:
     if title:
         print("\nThis page is for Audio Player! \nThe commands are below:")
         title = False
-    ch = input("\
-        s: start, p: pause, up: unpause, r: reset, g: get_pos, set n.n: set_pos(n.n), \n\
-        change: change_audio_file, sync: sync_lyrics, q: quit\n")
+    ch = input( f"\t[ s: start, p: pause, up: unpause, r: reset, g: get_pos, set n.n: set_pos(n.n), ]\n"
+                f"\t[ change: change_audio_file, sync: sync_lyrics, q: quit ]\n")
     if ch in cmds.keys():
         cmds[ch]()
     elif ch.startswith('set '):
