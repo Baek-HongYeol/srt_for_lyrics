@@ -3,6 +3,8 @@ import sys
 from pygame import mixer
 import tempfile
 from typing import List, Tuple
+from threading import Thread
+from time import sleep
 from config import MyConfig
 
 class Sync_Lyrics:
@@ -36,6 +38,8 @@ class Sync_Lyrics:
         self.offset = -1
         self.read_script()
 
+        self.isDev = False
+        self.th1 = None
         print("This page is for making srt file with audio file!")
         print("The commands are below:")
         # TODO 2줄 가사도 지원하기 (일본어 노래 등)
@@ -96,6 +100,112 @@ class Sync_Lyrics:
         fd, self.tmppath = tempfile.mkstemp(suffix="_"+self.filename, dir='.')
         self.tmpfile = os.fdopen(fd, "w", encoding="utf-8")
 
+
+    def get_row(self, start:str, end:str, line:str):
+        """
+        start: time string with format {HH:MM:SS,mmm} (H: hour, M: minutes, S: seconds, mmm: milliseconds)
+        end: time string with format {HH:MM:SS,mmm} (H: hour, M: minutes, S: seconds, mmm: milliseconds)
+        line: 1 line lyric string
+        """
+        start_time  = int(start[0:2])*3600 + int(start[3:5])*60 + int(start[6:8]) 
+        start_time = start_time * 1000 + int(start[-3:])
+        end_time    = int(end[0:2])*3600 + int(end[3:5])*60 + int(end[6:8]) 
+        end_time   = end_time * 1000 + int(end[-3:])
+        return (start_time, end_time, line)
+    
+    def parse_srt(self, file_name):
+        import re
+        if self.sync_list and len(self.sync_list) > 0:
+            overwrite = input("sync_list has data in memory. Overwrite?(y/N) ")
+            if overwrite.lower() == 'y' or overwrite.lower() == 'yes':
+                self.sync_list = []
+            else:
+                return False
+        
+        lines = []
+        with open(file_name, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        start = ""
+        end = ""
+        idx = 0
+        lyric = ""
+        time_pattern = "(\d{2,2}:\d{2,2}:\d{2,2},\d{3,3}) --> (\d{2,2}:\d{2,2}:\d{2,2},\d{3,3})"
+        time_gotten = False
+        p = re.compile(time_pattern)
+        # TODO 파싱 예외 처리
+        for line in lines:
+            if line.strip() == "":
+                if start != "" and end != "" and lyric != "":
+                    row = self.get_row(start, end, lyric[1:-1])
+                    self.sync_list.append(row)
+                idx += 1
+                start = ""
+                end = ""
+                lyric = ""
+                time_gotten = False
+            else:
+                m = p.match(line)
+                if time_gotten:
+                    lyric += "\n" + line
+                elif  m is not None and len(m.groups()) == 2:
+                    start = m.group(1)
+                    end = m.group(2)
+                    time_gotten = True
+                    
+
+
+    def exit(self):
+        if self.th1 and self.isDev:
+            self.isDev = False
+            self._isDev = False
+        return
+        
+
+    def work(self):
+        self.idx = 0
+        if len(self.sync_list) == 0:
+            print("Dev finished due to empty list.")
+            return
+        self.start()
+        printed = False
+        while self._isDev and not self.is_pause:
+            if self.get_pos() > self.sync_list[0][0] and not printed:
+                print(self.sync_list[0][2])
+                printed = True
+                break
+                
+            sleep(0.01)
+        while self._isDev and not self.is_pause:
+            if self.get_pos() > self.sync_list[self.idx][1]:
+                self.idx += 1
+                if len(self.sync_list) == self.idx:
+                    break
+                print(self.sync_list[self.idx][2])
+            sleep(0.01)
+        print("Dev finished")
+        return
+
+    def dev(self):
+        if self.isDev:
+            self._isDev = False
+            if self.th1:
+                self.th1.join()
+            self.isDev = False
+            self.pause()
+            self.th1 = None
+        else:
+            self.p.stop()
+            self.offset = -1
+            self.isDev = True
+            self._isDev = True
+            if self.sync_list is not None and len(self.sync_list) == 0:
+                self.parse_srt(self.get_srt_filename())
+            self.th1 = Thread(target=self.work)
+            self.th1.start()
+
+
+######### control methods #########    
 
     def start(self):
         self.p.play()
@@ -167,14 +277,15 @@ class Sync_Lyrics:
     def cancel(self):
         self.reset()
         print("Cancel making sync lyrics")
+        self.exit()
         return
 
     def back_line(self):
-        if len(self.sync_list) == 0:
+        if self.idx == 0 or len(self.sync_list) == 0:
             self.start()
             self.sync_started = False
             return
-        tmp:Tuple[int, int, str] = self.sync_list.pop()
+        tmp:Tuple[int, int, str] = self.sync_list[self.idx-1]
         self.idx -= 1
         self.set_pos(tmp[0]/1000)
         print('')
@@ -226,7 +337,7 @@ class Sync_Lyrics:
         self.idx = 0
         self.start_pos = 0
         
-        cmds = {'m': self.start, 'p': self.pause, 'up': self.unpause, 'r': self.reset, 'c': self.cancel, 'b': self.back_line}
+        cmds = {'m': self.start, 'p': self.pause, 'up': self.unpause, 'r': self.reset, 'c': self.cancel, 'b': self.back_line, 'dev': self.dev}
         while True:
             ch = input("\t[ m: music_start, p: pause, up: unpause, r: reset, b: 1 line back, c: cancel, save: save, \\n: sync line. ]\n")
             
@@ -239,16 +350,20 @@ class Sync_Lyrics:
                     if ch == 'c':
                         return
 
-            elif ch == '' and not self.is_pause:
+            elif ch == '' and not self.is_pause and not self.isDev:
                 if not self.sync_started:
                     self.first_sync()
                     self.print_row((self.start_pos, '', lyrics[self.idx]))
                     continue
                 t = self.get_pos()
                 tmp = (self.start_pos, t, lyrics[self.idx])
+                if len(self.sync_list) > self.idx:
+                    self.sync_list[self.idx] = tmp
+                else:
+                    self.sync_list.append(tmp)
+                
                 self.start_pos = t
                 self.idx += 1
-                self.sync_list.append(tmp)
                 print('')
                 self.print_row(tmp)
                 if self.idx == len(lyrics):
