@@ -152,8 +152,32 @@ class Sync_Lyrics:
                     start = m.group(1)
                     end = m.group(2)
                     time_gotten = True
-                    
 
+
+    def timestamp_to_string(self, ms: int):
+        if type(ms) is not int:
+            return ''
+        sec = ms // 1000
+        ms = ms% 1000
+        min = sec // 60
+        sec = sec % 60
+        hour = min // 60
+        min = min % 60
+        return '%02d:%02d:%02d,%03d'%(hour,min,sec,ms)
+
+    def row_with_string_format(self, row:Tuple[int,any,str]):
+        if len(row) != 3:
+            print('wrong row')
+            return
+        output = self.timestamp_to_string(row[0]) + ' --> ' + self.timestamp_to_string(row[1]) + "\n"
+        output += row[2] + "\n"
+        return output
+
+    def print_row(self, row:Tuple[int,any,str]):
+        if len(row) != 3:
+            print('wrong row')
+            return
+        print(self.row_with_string_format(row), end='')
 
     def exit(self):
         if self.th1 and self.isDev:
@@ -185,7 +209,7 @@ class Sync_Lyrics:
             sleep(0.01)
         print("Dev finished")
         return
-
+    # TODO 함수 이름 변경
     def dev(self):
         if self.isDev:
             self._isDev = False
@@ -203,6 +227,67 @@ class Sync_Lyrics:
                 self.parse_srt(self.get_srt_filename())
             self.th1 = Thread(target=self.work)
             self.th1.start()
+
+
+    def sync_lyrics(self):
+        lyrics = self.script
+        
+        self.sync_list = []
+        self.idx = 0
+        self.start_pos = 0
+        
+        cmds = {'m': self.start, 'p': self.pause, 'up': self.unpause, 'r': self.reset, 'c': self.cancel, 'b': self.back_line, 'dev': self.dev}
+        while True:
+            ch = input("\t[ m: music_start, p: pause, up: unpause, r: reset, b: 1 line back, c: cancel, save: save, \\n: sync line. ]\n")
+            
+            if ch in cmds.keys():
+                if ch == 'm':
+                    print('\n' + lyrics[self.idx])
+                    self.start()
+                else:
+                    cmds[ch]()
+                    if ch == 'c':
+                        return
+
+            elif ch == '' and not self.is_pause and not self.isDev:
+                if not self.sync_started:
+                    self.first_sync()
+                    self.print_row((self.start_pos, '', lyrics[self.idx]))
+                    continue
+                t = self.get_pos()
+                tmp = (self.start_pos, t, lyrics[self.idx])
+                if len(self.sync_list) > self.idx:
+                    self.sync_list[self.idx] = tmp
+                else:
+                    self.sync_list.append(tmp)
+                
+                self.start_pos = t
+                self.idx += 1
+                print('')
+                self.print_row(tmp)
+                if self.idx == len(lyrics):
+                    print("\n모든 가사의 싱크를 등록하셨습니다. ", end='')
+                    try:
+                        self.save()
+                    except Exception as e:
+                        print(e)
+                    ex = input("종료하시겠습니까? (Yes or not)")
+                    if ex.lower() == 'y' or ex.lower() == 'yes':
+                        self.reset()
+                        return
+                else:
+                    self.print_row((self.start_pos, '', lyrics[self.idx]))
+            elif ch == 'save':
+                try:
+                    self.pause()
+                    self.save()
+                except Exception as e:
+                    print(e)
+                    print("위 오류로 인해 저장에 실패했습니다.")
+                ex = input("종료하시겠습니까? (Yes or not)")
+                if ex.lower() == 'y' or ex.lower() == 'yes':
+                    self.reset()
+                    return
 
 
 ######### control methods #########    
@@ -240,32 +325,6 @@ class Sync_Lyrics:
             t += int(self.offset*1000)
         return t
 
-
-    def timestamp_to_string(self, ms: int):
-        if type(ms) is not int:
-            return ''
-        sec = ms // 1000
-        ms = ms% 1000
-        min = sec // 60
-        sec = sec % 60
-        hour = min // 60
-        min = min % 60
-        return '%02d:%02d:%02d,%03d'%(hour,min,sec,ms)
-
-    def row_with_string_format(self, row:Tuple[int,any,str]):
-        if len(row) != 3:
-            print('wrong row')
-            return
-        output = self.timestamp_to_string(row[0]) + ' --> ' + self.timestamp_to_string(row[1]) + "\n"
-        output += row[2] + "\n"
-        return output
-
-    def print_row(self, row:Tuple[int,any,str]):
-        if len(row) != 3:
-            print('wrong row')
-            return
-        print(self.row_with_string_format(row), end='')
-    
     def reset(self):
         self.p.stop()
         self.offset = -1
@@ -328,64 +387,3 @@ class Sync_Lyrics:
         print(filename + " is saved!\n")
         self.filename = filename
         self.clear_tmpfile()
-
-
-    def sync_lyrics(self):
-        lyrics = self.script
-        
-        self.sync_list = []
-        self.idx = 0
-        self.start_pos = 0
-        
-        cmds = {'m': self.start, 'p': self.pause, 'up': self.unpause, 'r': self.reset, 'c': self.cancel, 'b': self.back_line, 'dev': self.dev}
-        while True:
-            ch = input("\t[ m: music_start, p: pause, up: unpause, r: reset, b: 1 line back, c: cancel, save: save, \\n: sync line. ]\n")
-            
-            if ch in cmds.keys():
-                if ch == 'm':
-                    print('\n' + lyrics[self.idx])
-                    self.start()
-                else:
-                    cmds[ch]()
-                    if ch == 'c':
-                        return
-
-            elif ch == '' and not self.is_pause and not self.isDev:
-                if not self.sync_started:
-                    self.first_sync()
-                    self.print_row((self.start_pos, '', lyrics[self.idx]))
-                    continue
-                t = self.get_pos()
-                tmp = (self.start_pos, t, lyrics[self.idx])
-                if len(self.sync_list) > self.idx:
-                    self.sync_list[self.idx] = tmp
-                else:
-                    self.sync_list.append(tmp)
-                
-                self.start_pos = t
-                self.idx += 1
-                print('')
-                self.print_row(tmp)
-                if self.idx == len(lyrics):
-                    print("\n모든 가사의 싱크를 등록하셨습니다. ", end='')
-                    try:
-                        self.save()
-                    except Exception as e:
-                        print(e)
-                    ex = input("종료하시겠습니까? (Yes or not)")
-                    if ex.lower() == 'y' or ex.lower() == 'yes':
-                        self.reset()
-                        return
-                else:
-                    self.print_row((self.start_pos, '', lyrics[self.idx]))
-            elif ch == 'save':
-                try:
-                    self.pause()
-                    self.save()
-                except Exception as e:
-                    print(e)
-                    print("위 오류로 인해 저장에 실패했습니다.")
-                ex = input("종료하시겠습니까? (Yes or not)")
-                if ex.lower() == 'y' or ex.lower() == 'yes':
-                    self.reset()
-                    return
