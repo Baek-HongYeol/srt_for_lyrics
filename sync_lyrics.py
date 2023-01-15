@@ -59,8 +59,10 @@ class Sync_Lyrics:
         self.script = lyrics
 
     def get_srt_filename(self, path = ''):
+        isdefault = False
         if path == '':
             path = self.audio_filename
+            isdefault = True
         ext_idx = path.rfind('.')
         if ext_idx != -1:
             path = path[:ext_idx]
@@ -73,6 +75,8 @@ class Sync_Lyrics:
                 path = path[name_idx+1:]
         
         if path == '':
+            if isdefault:
+                raise FileNotFoundError("파일 이름을 식별할 수 없습니다.")
             return self.get_srt_filename()
         return path+".srt"
 
