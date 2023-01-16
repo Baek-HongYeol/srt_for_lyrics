@@ -42,24 +42,34 @@ class Sync_Lyrics:
         self.th1 = None
         print("This page is for making srt file with audio file!")
         print("The commands are below:")
-        # TODO 2줄 가사도 지원하기 (일본어 노래 등)
-            # TODO-1 터미널 창에 맞춰서 output 조정하기
-            # TODO-2 1줄/2줄 선택받고 출력, 저장 데이터(튜플) 조정하기
+        # TODO 공백 라인을 기준으로 가사 라인 수 조절하는 옵션 추가하기 (중요도: low)
     
     def read_script(self, lyric_filename:str = None):
         if lyric_filename is None:
             lyric_filename = self.config.lyric_filename
         
+        self.block_line = self.config.get_multiline_setting()
+
         lyrics = []
+        lines = []
         if not os.path.exists(lyric_filename):
             self.config.set_lyric_file()
             #TODO 가사 파일 변경 기능 + 변경 취소 시 예외 처리
         try:
             with open(lyric_filename, "r", encoding='UTF-8') as f:
-                lyrics = f.read().splitlines()
+                lines = f.read().splitlines()
         except Exception as e:
             print("file is not readable.", file = sys.stderr)
             raise e
+        if self.block_line == 1:
+            pass
+            #return lines
+        for i in range(0, len(lines), self.block_line):
+            end = i + self.block_line
+            if end > len(lines):
+                end = len(lines)
+            lyrics.append('\n'.join(lines[i:end]))
+
         self.script = lyrics
 
     def get_srt_filename(self, path = ''):
@@ -132,6 +142,7 @@ class Sync_Lyrics:
         lyric = ""
         time_pattern = "(\d{2,2}:\d{2,2}:\d{2,2},\d{3,3}) --> (\d{2,2}:\d{2,2}:\d{2,2},\d{3,3})"
         time_gotten = False
+        multiline = False
         p = re.compile(time_pattern)
         # TODO 파싱 예외 처리
         for line in lines:
@@ -147,10 +158,15 @@ class Sync_Lyrics:
             else:
                 m = p.match(line)
                 if time_gotten:
-                    lyric += "\n" + line
+                    if not multiline: # 첫 줄
+                        lyric += "\n" + line
+                        multiline = True
+                    else:   # 여러 줄
+                        lyric += line
                 elif  m is not None and len(m.groups()) == 2:
                     start = m.group(1)
                     end = m.group(2)
+                    multiline = False
                     time_gotten = True
 
 

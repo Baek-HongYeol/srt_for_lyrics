@@ -54,3 +54,9 @@ class MyConfig:
         while not os.path.exists(lyric_filename):
             lyric_filename = input("존재하지 않는 파일 혹은 경로입니다. 다시 입력하세요.\n")
         self.lyric_filename = lyric_filename
+
+    def get_multiline_setting(self):
+        lines = self.get_setting('multiline') or input("싱크를 등록할 라인 수를 입력해주세요. : ")
+        while not isinstance(lines, int):
+            lines = input("라인 수는 정수로만 입력해주세요. 다시 입력하세요. : ")
+        return lines
