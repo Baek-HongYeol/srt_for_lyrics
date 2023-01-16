@@ -27,7 +27,8 @@ srt 파일을 만들기 위해 txt 가사 파일이 필요합니다!
 # Screenshots
 - 첫 화면 : 음악 파일을 찾고 재생할 수 있는 화면입니다.  
   
-  ![Main Screen](https://user-images.githubusercontent.com/24859233/201835034-6d0cd8bb-069b-4e34-9905-a812ba37190d.png)  
+  ![Main Screen](https://user-images.githubusercontent.com/24859233/212577278-ab311aef-6b1b-472f-97df-e9092f2bdefc.png)
+
   start : 처음부터 재생합니다.  
   pause : 일시정지  
   unpause : 일시정지 해제  
@@ -39,7 +40,7 @@ srt 파일을 만들기 위해 txt 가사 파일이 필요합니다!
   
   
 - Sync Lyric 화면 : srt 파일을 만들기 위해 싱크를 등록합니다.
-  ![Sync Lyric Screen](https://user-images.githubusercontent.com/24859233/201836485-4c081c82-9cbf-4097-91b8-ff0ca300f4f7.png)  
+  ![Sync Lyric Screen](https://user-images.githubusercontent.com/24859233/212575837-3b34fcf1-8955-4dd2-b0c3-d54dffa91156.png)  
   
   start : 음악을 시작합니다.  
   \n( 아무 입력 없이 enter ) : 한 줄씩 시간을 등록합니다. 각 가사의 **시작** 타이밍에 엔터를 누르면 이전 가사의 종료 타이밍과 함께 등록됩니다.  
