@@ -3,21 +3,14 @@ from pygame import mixer
 from sync_lyrics import Sync_Lyrics
 from config import MyConfig
 
-def load_dev(i):
-    txt = ''
-    if os.path.exists("test.txt"):
-        with open("test.txt", "r", encoding="UTF-8") as f:
-            txt = f.read().splitlines()
-        return txt[i]
-
 def init_audio():
     global p, config
     audio_filename = config.audio_filename
     sample_rate = config.sample_rate
     if isinstance(sample_rate, int) and sample_rate > 0:
-        print("sample_rate cannot be recognized. using 44.1khz.")
         mixer.init(frequency=sample_rate)
     else:
+        print("sample_rate cannot be recognized. using 44.1khz.")
         config.sample_rate = 44100
         mixer.init()
     mixer.music.load( audio_filename )
@@ -26,7 +19,7 @@ def init_audio():
 def init():
     init_audio()
 
-# TODO get audio property from audio file. ex) 44.1kHz/48kHz
+
 ########### init ###########
 
 offset = -1
@@ -94,9 +87,12 @@ def sync_lyrics():
     global p, title, config
     p.unload()
 
-    
     a = Sync_Lyrics(config)
-    a.sync_lyrics()
+    try:
+        a.sync_lyrics()
+    except Exception as e:
+        print(e)
+
     title = True
 
 

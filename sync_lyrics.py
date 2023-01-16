@@ -62,8 +62,7 @@ class Sync_Lyrics:
             print("file is not readable.", file = sys.stderr)
             raise e
         if self.block_line == 1:
-            pass
-            #return lines
+            return lines
         for i in range(0, len(lines), self.block_line):
             end = i + self.block_line
             if end > len(lines):
@@ -144,7 +143,7 @@ class Sync_Lyrics:
         time_gotten = False
         multiline = False
         p = re.compile(time_pattern)
-        # TODO 파싱 예외 처리
+
         for line in lines:
             if line.strip() == "":
                 if start != "" and end != "" and lyric != "":
@@ -240,7 +239,11 @@ class Sync_Lyrics:
             self.isDev = True
             self._isDev = True
             if self.sync_list is not None and len(self.sync_list) == 0:
-                self.parse_srt(self.get_srt_filename())
+                try:
+                    self.parse_srt(self.get_srt_filename())
+                except Exception as e:
+                    print(e)
+                    print("srt 파일에 문제가 있습니다. 파일 내용이 올바른 구성인지 확인하세요.")
             self.th1 = Thread(target=self.work)
             self.th1.start()
 
