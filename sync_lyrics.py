@@ -249,15 +249,24 @@ class Sync_Lyrics:
 
 
     def sync_lyrics(self):
-        lyrics = self.script
+        import platform
+        if platform.system() == 'Windows':
+            import msvcrt as getch
+        else:
+            import getch
         
+        lyrics = self.script
         self.sync_list = []
         self.idx = 0
         self.start_pos = 0
         
-        cmds = {'m': self.start, 'p': self.pause, 'up': self.unpause, 'r': self.reset, 'c': self.cancel, 'b': self.back_line, 'dev': self.dev}
+        cmds = {'m': self.start, 'p': self.pause, 'u': self.unpause, 'r': self.reset, 'c': self.cancel, 'b': self.back_line, 'dev': self.dev}
         while True:
-            ch = input("\t[ m: music_start, p: pause, up: unpause, r: reset, b: 1 line back, c: cancel, save: save, \\n: sync line. ]\n")
+            print("\t[ m: music_start, p: pause, u: unpause, r: reset, b: 1 line back, c: cancel, :save : save, \\n: sync line. ]\n")
+            ch:bytes = getch.getch()
+            if platform.system() == 'Windows':
+                ch = ch.decode('utf-8')
+            #ch = input("\t[ m: music_start, up: pause, up: unpause, r: reset, b: 1 line back, c: cancel, save: save, \\n: sync line. ]\n")
             
             if ch in cmds.keys():
                 if ch == 'm':
@@ -268,7 +277,7 @@ class Sync_Lyrics:
                     if ch == 'c':
                         return
 
-            elif ch == '' and not self.is_pause and not self.isDev:
+            elif (ch == '' or ch =='\r' )and not self.is_pause and not self.isDev:
                 if not self.sync_started:
                     self.first_sync()
                     self.print_row((self.start_pos, '', lyrics[self.idx]))
@@ -296,17 +305,22 @@ class Sync_Lyrics:
                         return
                 else:
                     self.print_row((self.start_pos, '', lyrics[self.idx]))
-            elif ch == 'save':
-                try:
+            elif ch == ':':
+                print(':', end='')
+                ch = input()
+                if ch in cmds:
+                    cmds[ch]()
+                elif ch == 'save':
                     self.pause()
-                    self.save()
-                except Exception as e:
-                    print(e)
-                    print("위 오류로 인해 저장에 실패했습니다.")
-                ex = input("종료하시겠습니까? (Yes or not)")
-                if ex.lower() == 'y' or ex.lower() == 'yes':
-                    self.reset()
-                    return
+                    try:
+                        self.save()
+                    except Exception as e:
+                        print(e)
+                        print("위 오류로 인해 저장에 실패했습니다.")
+                    ex = input("종료하시겠습니까? (Yes or not)")
+                    if ex.lower() == 'y' or ex.lower() == 'yes':
+                        self.reset()
+                        return
 
 
 ######### control methods #########    
