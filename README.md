@@ -2,6 +2,10 @@
 make .srt file associated with music.  
 음악에 맞춰 가사의 싱크를 편리하게 맞추세요.  
   
+python 파일을 실행하기 위해 pygame 모듈을 설치해야합니다!  
+```bash
+pip install pygame
+```
 srt 파일을 만들기 위해 txt 가사 파일이 필요합니다!  
 같은 줄에 있는 가사는 한 라인에 출력됩니다.  
 표현하고 싶은 대로 라인을 나눠주세요!
