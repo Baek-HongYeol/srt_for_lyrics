@@ -33,7 +33,7 @@ class MyConfig:
         sample_rate = -1
         audio_filename = (self.get_setting('audio_filename') if self.isDefault else None) or input("오디오 파일 이름 혹은 경로를 입력하세요. :\n")
         while not os.path.exists(audio_filename):
-            audio_filename = input("존재하지 않는 파일 혹은 경로입니다. \n오디오 파일 이름 혹은 경로를 입력하세요. :\n")
+            audio_filename = input("존재하지 않는 오디오 파일 혹은 경로입니다. \n오디오 파일 이름 혹은 경로를 입력하세요. :\n")
         self.audio_filename:str = audio_filename
         while True:
             #TODO 변경 취소 만들기
@@ -52,7 +52,7 @@ class MyConfig:
         # TODO 취소 만들기
         lyric_filename = self.get_setting('lyric_filename') or input("등록할 스크립트 파일 이름 혹은 경로를 입력하세요. :\n")
         while not os.path.exists(lyric_filename):
-            lyric_filename = input("존재하지 않는 파일 혹은 경로입니다. 다시 입력하세요.\n")
+            lyric_filename = input("존재하지 않는 스크립트 파일 혹은 경로입니다. 다시 입력하세요.\n")
         self.lyric_filename = lyric_filename
 
     def get_multiline_setting(self):

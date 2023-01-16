@@ -223,7 +223,7 @@ class Sync_Lyrics:
                     break
                 print(self.sync_list[self.idx][2])
             sleep(0.01)
-        print("Dev finished")
+        print("Dev finished dev를 입력하면 dev 모드가 종료됩니다.")
         return
     # TODO 함수 이름 변경
     def dev(self):
