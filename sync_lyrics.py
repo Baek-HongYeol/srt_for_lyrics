@@ -49,11 +49,11 @@ class Sync_Lyrics:
             lyric_filename = self.config.lyric_filename
         
         self.block_line = self.config.get_multiline_setting()
-
         lyrics = []
         lines = []
         if not os.path.exists(lyric_filename):
             self.config.set_lyric_file()
+            lyric_filename = self.config.lyric_filename
             #TODO 가사 파일 변경 기능 + 변경 취소 시 예외 처리
         try:
             with open(lyric_filename, "r", encoding='UTF-8') as f:
@@ -62,7 +62,7 @@ class Sync_Lyrics:
             print("file is not readable.", file = sys.stderr)
             raise e
         if self.block_line == 1:
-            return lines
+            self.script = lines
         for i in range(0, len(lines), self.block_line):
             end = i + self.block_line
             if end > len(lines):
